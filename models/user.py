@@ -1,12 +1,15 @@
+import sys
+sys.path.append("..")
+
 import uuid
 from sqlalchemy import Column, String, Boolean
-from database import Base
+from db import Base
 
 
 class User(Base):
     __tablename__ = "users"
 
-    user_id = Column(String(36), primary_key=True, default=str(uuid.uuid4()))
+    user_id = Column(String(36), primary_key=True, default=uuid.uuid4)
     email = Column(String(255), unique=True, index=True, nullable=False)
     hashed_password = Column(String(255), nullable=False)
     first_name = Column(String(50), nullable=False)
@@ -17,7 +20,7 @@ class User(Base):
     
     def to_dict(self):
         return {
-            "user_id": self.user_id,
+            "user_id": str(self.user_id),
             "email": self.email,
             "hashed_password": self.hashed_password,
             "first_name": self.first_name,

@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
-from database import engine, Base, get_session
+from db import engine, Base, get_session
 from schemas import User
 import models
 
