@@ -8,6 +8,6 @@ class User(BaseModel):
     hashed_password: str
     first_name: str
     last_name: str
-    sur_name: Optional[str]
+    surname: Optional[str]
     path_to_image: str
     is_active: Optional[bool]
