@@ -1,9 +1,7 @@
-import sys
-sys.path.append("..")
-
+from db import Base
 import uuid
 from sqlalchemy import Column, String, Boolean
-from db import Base
+from typing import Optional
 
 
 class User(Base):
@@ -19,7 +17,7 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     
     def __init__(self, email: str, password: str, first_name: str,
-                 last_name: str, surname: str, path_to_image: str, is_active: bool) -> None:
+                 last_name: str, surname: Optional[str], path_to_image: str, is_active: Optional[bool]) -> None:
         self.email = email
         self.hashed_password = password
         self.first_name = first_name
@@ -27,8 +25,10 @@ class User(Base):
         self.surname = surname
         self.path_to_image = path_to_image
         self.is_active = is_active
-        
     
+    def get_user_full_name(self) -> str:    
+        return f'{self.last_name} {self.first_name} {self.surname}'
+        
     def to_dict(self):
         return {
             "user_id": str(self.user_id),

@@ -20,8 +20,8 @@ app.include_router(auth.router,
                    tags=['auth'])
 
 
-@app.get('/')
+@app.get('/', response_class=HTMLResponse)
 async def index(request: Request):
     return templates.TemplateResponse('home.html', {'request': request,
                                                     'title': 'Home'})
-    
+
