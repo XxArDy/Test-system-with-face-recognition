@@ -16,8 +16,9 @@ class User(Base):
     path_to_image = Column(String(255), nullable=False)
     is_active = Column(Boolean, default=True)
     
-    def __init__(self, email: str, password: str, first_name: str,
+    def __init__(self, user_id: Optional[str], email: str, password: str, first_name: str,
                  last_name: str, surname: Optional[str], path_to_image: str, is_active: Optional[bool]) -> None:
+        self.user_id = user_id
         self.email = email
         self.hashed_password = password
         self.first_name = first_name

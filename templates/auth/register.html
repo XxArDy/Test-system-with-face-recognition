@@ -5,12 +5,18 @@
 {% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="card center-screen">
+<div id="mainDiv"">
+<div class="container center-screen">
+    <div class="card" id="card">
         <div class="card-header">
             Реєстрація
         </div>
         <div class="card-body">
+          {% if msg %}
+                <div class="alert alert-danger mt-1" role="alert">
+                    {{ msg }}
+                </div>
+            {% endif %}
             <form method="post">
                 <div class="form-group">
                     <label>Пошта</label>
@@ -34,9 +40,14 @@
                 </div>
                 <div class="form-group">
                     <label>По батькові</label>
-                    <input class="form-control" type="text" name="surname" required>
+                    <input class="form-control" type="text" name="surname">
                 </div>
-                <button class="btn btn-primary mt-3" type="submit">Реєсруватись</button>
+                <div class="form-group">
+                  {% include 'photo_model.html' %}
+                  <button type="button" class="btn btn-primary mt-2" id="photoButton">Фото</button>
+                  <input class="hidden" type="hidden" name="img" id="photoInput">
+                </div>                
+                <button class="btn btn-primary mt-3" type="submit">Реєструватись</button>
             </form>
         </div>
     <div class="card-footer text-muted">
@@ -44,4 +55,8 @@
     </div>
     </div>
 </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4" crossorigin="anonymous"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="{{ url_for('static', path='/photo.js') }}"></script>
 {% endblock content %}

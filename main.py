@@ -8,7 +8,6 @@ from starlette.staticfiles import StaticFiles
 
 app = FastAPI()
 
-# Create database
 Base.metadata.create_all(bind=engine)
 
 app.mount('/static', StaticFiles(directory='static'), name='static')

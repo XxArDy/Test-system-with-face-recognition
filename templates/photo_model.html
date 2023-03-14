@@ -1,0 +1,18 @@
+<section class="modal hidden center-screen" id="cameraModal">
+  <div class="modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="cameraModalLabel" style="color: black;">Камера</h5>
+          <button type="button" class="btn-close" id="closeBtn" onclick="closeModel()">⨉</button>
+        </div>
+        <div class="modal-body">
+          <video id="cameraFeed" autoplay="" width="466" height="349.5"></video>
+          <img id="photoPreview" style="display:none; max-width: 100%; height: auto;  margin-left: auto; margin-right: auto;">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" id="takePhotoButton">Зробити фото</button>
+          <button type="button" class="btn btn-success" id="savePhotoButton" onclick="closeModel()">OK</button>
+        </div>
+      </div>
+  </div>
+</section>  

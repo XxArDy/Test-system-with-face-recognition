@@ -11,7 +11,7 @@ class Question(Base):
     is_multiple_choice = Column(Boolean, nullable=False)
     test_id = Column(Integer, ForeignKey('tests.id'), nullable=False)
     test = relationship("Test", backref="questions")
-    
+
     def __init__(self, text: str, is_multiple_choice: bool) -> None:
         self.text = text
         self.is_multiple_choice = is_multiple_choice
