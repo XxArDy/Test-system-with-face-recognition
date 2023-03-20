@@ -1,17 +1,16 @@
-from db import Base
-from sqlalchemy import Column, String, Integer, Boolean, ForeignKey
+from db import database
+from sqlalchemy import Column, String, Integer, Boolean, ForeignKey, Sequence
 from sqlalchemy.orm import relationship
 
 
-class Question(Base):
+class Question(database.get_base()):
     __tablename__ = 'questions'
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(Integer, Sequence('question_id_seq'), primary_key=True, unique=True, nullable=False)
     text = Column(String(255), nullable=False)
-    is_multiple_choice = Column(Boolean, nullable=False)
     test_id = Column(Integer, ForeignKey('tests.id'), nullable=False)
     test = relationship("Test", backref="questions")
 
-    def __init__(self, text: str, is_multiple_choice: bool) -> None:
+    def __init__(self, text: str, test_id: int) -> None:
         self.text = text
-        self.is_multiple_choice = is_multiple_choice
+        self.test_id = test_id

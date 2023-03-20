@@ -15,7 +15,7 @@ from starlette.responses import RedirectResponse
 
 import models
 import utils
-from db import get_session
+from db import database
 
 SECRET_KEY = "14pPK2rdJWVKfaqQvRn1DZu508KunWImLzP04Bxy5A7a9EEnnFo1ItGZlDJI"
 ALGORITHM = "HS256"
@@ -42,24 +42,23 @@ class LoginForm:
 
 
 def get_password_hash(password: str):
-    bcrypt_context.hash(password)
+    return bcrypt_context.hash(password)
 
 
 def verify_password(plain_password: str, hashed_password: str):
-    bcrypt_context.verify(plain_password, hashed_password)
+    return bcrypt_context.verify(plain_password, hashed_password)
 
 
 """ Authenticate user """
 
 
-def authenticate_user(email: str, password: str, db: Session) -> models.User:
+def authenticate_user(email: str, password: str, db: Session):
     user = db.query(models.User) \
         .filter(models.User.email == email) \
         .first()
-    if not user:
+    if not user or not verify_password(password, user.hashed_password):
         return False
-    if not verify_password(password, user.hashed_password):
-        return False
+
     return user
 
 
@@ -67,7 +66,7 @@ def authenticate_user(email: str, password: str, db: Session) -> models.User:
 
 
 def create_access_token(email: str, user_id: str,
-                        expires_delta: Optional[timedelta] = None) -> str:
+                        expires_delta: Optional[timedelta] = None):
     encode = {'sub': email, 'id': user_id}
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
@@ -80,7 +79,7 @@ def create_access_token(email: str, user_id: str,
 """ Get user by token """
 
 
-async def get_current_user(request: Request) -> dict:
+async def get_current_user(request: Request):
     try:
         token = request.cookies.get('access_token')
         if token is None:
@@ -90,9 +89,11 @@ async def get_current_user(request: Request) -> dict:
         user_id: str = payload.get('id')
         if email is None or user_id is None:
             logout(request)
+            return None
         return {'email': email, 'id': user_id}
     except JWTError:
-        raise HTTPException(status_code=404, detail="Not found")
+        return None
+
 
 
 """ View login form """
@@ -100,24 +101,29 @@ async def get_current_user(request: Request) -> dict:
 
 @router.get('/login', response_class=HTMLResponse)
 async def view_login(request: Request):
+    if await get_current_user(request):
+        return RedirectResponse(request.url_for('index'), status_code=status.HTTP_302_FOUND)
     return templates.TemplateResponse('auth/login.html', {'request': request,
-                                                          'title': 'Вхід'})
-
+                                                        'title': 'Вхід'})
+    
 
 """ View register form """
 
 
 @router.get('/register', response_class=HTMLResponse)
 async def view_register(request: Request):
+    if await get_current_user(request):
+        return RedirectResponse(request.url_for('index'), status_code=status.HTTP_302_FOUND)
     return templates.TemplateResponse('auth/register.html', {'request': request,
-                                                             'title': 'Реєстрація'})
-
+                                                            'title': 'Реєстрація'})
+    
+    
 
 """ Login and create user token """
 
 
 @router.post('/login', response_class=HTMLResponse)
-async def login(request: Request, db: Session = Depends(get_session)):
+async def login(request: Request, db: Session = Depends(database.get_session)):
     try:
         form = LoginForm(request)
         await form.create_oauth_form()
@@ -145,8 +151,8 @@ async def login(request: Request, db: Session = Depends(get_session)):
 async def register(request: Request, email: str = Form(), password: str = Form(),
                    password2: str = Form(), firstname: str = Form(),
                    lastname: str = Form(), img: str = Form(),
-                   surname: Optional[str] = Form(),
-                   db: Session = Depends(get_session)):
+                   surname: Optional[str] = Form(None),
+                   db: Session = Depends(database.get_session)):
     validation1 = db.query(models.User).filter(models.User.email == email).first()
 
     if validation1 is not None:
@@ -184,9 +190,8 @@ async def register(request: Request, email: str = Form(), password: str = Form()
 """ Aunhenticate user and add token to cookie """
 
 
-@router.post('/token')
 async def login_for_access_token(response: Response, form_data: OAuth2PasswordRequestForm = Depends(),
-                                 db: Session = Depends(get_session)) -> bool:
+                                 db: Session = Depends(database.get_session)) -> bool:
     user = authenticate_user(form_data.username, form_data.password, db)
     if not user:
         return False
@@ -204,6 +209,6 @@ async def login_for_access_token(response: Response, form_data: OAuth2PasswordRe
 
 @router.get('/logout')
 async def logout(request: Request):
-    response = templates.TemplateResponse(request.url_for('index'), {'request': request})
+    response = templates.TemplateResponse('home.html', {'request': request})
     response.delete_cookie(key='access_token')
     return response

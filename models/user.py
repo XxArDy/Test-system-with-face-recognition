@@ -1,10 +1,10 @@
-from db import Base
+from db import database
 import uuid
 from sqlalchemy import Column, String, Boolean
 from typing import Optional
 
 
-class User(Base):
+class User(database.get_base()):
     __tablename__ = "users"
 
     user_id = Column(String(36), primary_key=True, default=uuid.uuid4)

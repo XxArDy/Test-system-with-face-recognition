@@ -1,0 +1,41 @@
+{% extends "layout/_navbar.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <div class="card-header row">
+            <h5 class="card-title col">Список тем</h5>
+            <a href="{{ url_for('view_topic_add', subject_id=subject_id) }}" class="btn btn-primary col-1">Додати</a>
+        </div>
+        <div class="card-body">
+
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Назва теми</th>
+                        <th>Функції</th>
+                    </tr>
+                </thead>
+                <tbody>
+                        {% if topics %}
+                            {% for item in topics %}
+                            <tr>
+                                <td>{{ item.name }}</td>
+                                <td class="col-2">
+                                    <a href="{{ url_for('view_test', topic_id=item.id) }}" class="btn btn-success">Перейти</a>
+                                    <a href="{{ url_for('view_topic_edit', subject_id=item.subject_id, topic_id=item.id) }}" class="btn btn-info">Змінити</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                        <tr>
+                            <td>Тем ще немає</td>
+                            <td></td>
+                        </tr>
+                        {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock content %}
