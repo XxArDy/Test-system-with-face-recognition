@@ -65,9 +65,9 @@ def authenticate_user(email: str, password: str, db: Session):
 """ Generate user token """
 
 
-def create_access_token(email: str, user_id: str,
+def create_access_token(email: str, user_id: str, role: str,
                         expires_delta: Optional[timedelta] = None):
-    encode = {'sub': email, 'id': user_id}
+    encode = {'sub': email, 'id': user_id, 'role': role}
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
     else:
@@ -79,7 +79,7 @@ def create_access_token(email: str, user_id: str,
 """ Get user by token """
 
 
-async def get_current_user(request: Request):
+async def get_current_user(request: Request) -> None | dict:
     try:
         token = request.cookies.get('access_token')
         if token is None:
@@ -195,9 +195,11 @@ async def login_for_access_token(response: Response, form_data: OAuth2PasswordRe
     user = authenticate_user(form_data.username, form_data.password, db)
     if not user:
         return False
+    role = db.query(models.Role).filter(models.Role.id == user.role_id)
     token = create_access_token(email=user.email,
                                 user_id=user.user_id,
-                                expires_delta=timedelta(minutes=60))
+                                role=role,
+                                expires_delta=timedelta(minutes=120))
 
     response.set_cookie(key='access_token', value=token, httponly=True)
 

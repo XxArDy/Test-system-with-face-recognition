@@ -27,7 +27,7 @@
           <ul class="navbar-nav ms-auto">
             {% if user %}
                 <li class="nav-item">
-                  <a href="#" class="nav-link">{{ user.get_user_full_name() }}</a>
+                  <a href="#" class="nav-link">{{ user.email }}</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url_for('logout') }}">Вихід</a>

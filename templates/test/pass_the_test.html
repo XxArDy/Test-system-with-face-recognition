@@ -1,0 +1,32 @@
+{% extends "layout/_navbar.html" %}
+
+{% block content %}
+<main>
+    <div class="container">
+        <form method="post">
+            <input type="hidden" class="hidden" name="user_id" value="{{ user['id'] }}">
+            {% for n in range(questions | length) %}
+            <div class="mt-3 p-3 border">
+            <div class="mb-3">
+                <span class="form-label" for="question-{{ questions[n].id }}">Запитання {{ n + 1}}:</span><br>
+                <label>{{ questions[n].text }}</label>
+            </div>
+            <div class="answers-container">
+                {% for answer in range(answers | length) %}
+                    {% if answers[answer].question_id == questions[n].id %}
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" id="correct-answer" class="form-check-input" id="is-correct-{{ questions[n].id }}-{{ answers[answer].id }}" name="is_correct_{{ questions[n].id }}_{{ answers[answer].id }}">
+                            <span class="form-label" for="is-correct-{{ questions[n].id }}-{{ answers[answer].id}}">{{ answers[answer].text }}</span>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            </div>
+            {% endfor %}
+            <button type="submit" class="btn btn-success mt-2 submit">Здати</button>
+        </form>
+    </div>
+
+    <input type="hidden" class="hidden" id="time" value="{{ timer }}">
+</main>
+{% endblock %}

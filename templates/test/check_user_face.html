@@ -1,0 +1,35 @@
+{% extends "layout/_navbar.html" %}
+
+{% block css %}
+    <link rel="stylesheet" href="{{ url_for('static', path='/test/css/check_photo.css') }}">
+{% endblock %}
+
+{% block content %}
+<main>
+    <div class="container">
+        <div class="card">
+            <div class="card-header">
+            Проверка лічності
+            </div>
+            {% if msg %}
+                <div class="alert alert-danger mt-1" role="alert">
+                    {{ msg }}
+                </div>
+            {% endif %}
+            <div class="card-body">
+                <form method="post" class="main-form">
+                    <label>Зробіть будь ласка фото щоб переввірити чи ви коректний користувач акаунту</label>
+                    <div class="camera">
+                        <video id="cameraFeed" autoplay=""></video>
+                        <img id="photoPreview">
+                    </div>
+                    <button type="button" class="btn btn-primary mt-2" id="takePhotoButton">Зробити фото</button>
+                    <input class="hidden" type="hidden" name="img" id="photoInput">
+                    <button type="submit" class="btn btn-success mt-2 submit">Підтвердити</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</main>
+<script src="{{ url_for('static', path='/test/js/check_photo.js') }}"></script>
+{% endblock %}
