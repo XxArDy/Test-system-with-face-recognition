@@ -3,41 +3,44 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.ext.declarative import declarative_base
 
-DATABASE_URL = os.getenv("DATABASE_URL")
-if not DATABASE_URL:
-    user = os.getenv("DB_USER", "xxardy")
-    password = os.getenv("DB_PASSWORD", "xxardy")
-    host = os.getenv("DB_HOST", "localhost")
-    port = os.getenv("DB_PORT", 5432)
-    database = os.getenv("DB_NAME", "HPKTest")
-    DATABASE_URL = f"postgresql://{user}:{password}@{host}:{port}/{database}"
+class Database:
+    def __init__(self):
+        self.DATABASE_URL = os.getenv("DATABASE_URL")
+        if not self.DATABASE_URL:
+            user = os.getenv("DB_USER", "xxardy")
+            password = os.getenv("DB_PASSWORD", "xxardy")
+            host = os.getenv("DB_HOST", "localhost")
+            port = os.getenv("DB_PORT", 5432)
+            database = os.getenv("DB_NAME", "hpktest")
+            self.DATABASE_URL = f"postgresql://{user}:{password}@{host}:{port}/{database}"
+
+        self.engine = create_engine(
+            self.DATABASE_URL
+        )
+
+        self.SessionLocal = sessionmaker(
+            autocommit=False, autoflush=False, bind=self.engine
+        )
+
+        self.Base = declarative_base()
     
+    def get_base(self):
+        return self.Base;
+    
+    def init_db(self):
+        self.Base.metadata.create_all(self.engine)
 
-engine = create_engine(
-    DATABASE_URL
-)
+    def get_session(self) -> Session:
+        """Return a new session with transaction management."""
+        session = self.SessionLocal()
+        try:
+            yield session
+            session.commit()
+        except Exception as e:
+            session.rollback()
+            raise e
+        finally:
+            session.close()
 
 
-SessionLocal = sessionmaker(
-    autocommit=False, autoflush=False, bind=engine
-)
-
-
-class Base(declarative_base()):
-    __abstract__ = True
-
-    def __repr__(self):
-        return f"<{self.__class__.__name__} {self.__dict__}>"
-
-
-def get_session() -> Session:
-    """Return a new session with transaction management."""
-    session = SessionLocal()
-    try:
-        yield session
-        session.commit()
-    except Exception as e:
-        session.rollback()
-        raise e
-    finally:
-        session.close()
+database = Database()

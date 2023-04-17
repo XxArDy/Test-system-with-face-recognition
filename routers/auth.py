@@ -1,98 +1,223 @@
-import sys
-sys.path.append("..")
-
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
-from schemas import User
-from passlib.context import CryptContext
-from sqlalchemy.orm import Session
-from db import get_session
+import os
+import uuid
 from datetime import datetime, timedelta
-from jose import jwt, JWTError
 from typing import Optional
 
+from fastapi import Depends, HTTPException, Request, Form, Response
+from fastapi.responses import HTMLResponse
+from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
+from jose import jwt, JWTError
+from passlib.context import CryptContext
+from sqlalchemy.orm import Session
+from starlette import status
+from starlette.responses import RedirectResponse
+
+from .base_router import BaseRouter
+
 import models
+import utils
+from db import database
 
 
-SECRET_KEY = "14pPK2rdJWVKfaqQvRn1DZu508KunWImLzP04Bxy5A7a9EEnnFo1ItGZlDJI"
-ALGORITHM = "HS256"
+class LoginForm:
+    def __init__(self, request: Request):
+        self.request: Request = request
+        self.username: Optional[str] = None
+        self.password: Optional[str] = None
 
-bcrypt_context = CryptContext(schemes=["bcrypt"], deprecated='auto')
+    async def create_oauth_form(self):
+        form = await self.request.form()
+        self.username = form.get('email')
+        self.password = form.get('password')
 
-oauth2_bearer = OAuth2PasswordBearer(tokenUrl='token')
+class AuthRouter(BaseRouter):
+    
+    bcrypt_context = CryptContext(schemes=["bcrypt"], deprecated='auto')
+    SECRET_KEY = "14pPK2rdJWVKfaqQvRn1DZu508KunWImLzP04Bxy5A7a9EEnnFo1ItGZlDJI"
+    ALGORITHM = "HS256"
+    oauth2_bearer = OAuth2PasswordBearer(tokenUrl='token')
+    
+    def __init__(self):
+        super().__init__()
 
-router = APIRouter()
+        
+    @staticmethod
+    def get_password_hash(password: str) -> str:
+        return AuthRouter.bcrypt_context.hash(password)
 
-get_password_hash = lambda password: bcrypt_context.hash(password) 
-verify_password = lambda plain_password, hashed_password: bcrypt_context.verify(plain_password, hashed_password)
+    @staticmethod
+    def verify_password(plain_password: str, hashed_password: str) -> bool:
+        return AuthRouter.bcrypt_context.verify(plain_password, hashed_password)
 
-# region Methods
 
-def authenticate_user(email: str, password: str, db: Session) -> models.User:
-    user = db.query(models.User)\
-        .filter(models.User.email == email)\
-        .first()
-    if not user:
-        raise get_user_exeption()
-    if not verify_password(password, user.hashed_password):
-        raise get_user_exeption()
-    return user 
+    """ Authenticate user """
+
+
+    def authenticate_user(self, email: str, password: str, db: Session) -> models.User | bool: 
+        user = db.query(models.User) \
+            .filter(models.User.email == email) \
+            .first()
+        if not user or not self.verify_password(password, user.hashed_password):
+            return False
+
+        return user
+
+
+    """ Generate user token """
+
+
+    def create_access_token(self, email: str, user_id: str, role: str,
+                            expires_delta: Optional[timedelta] = None):
+        encode = {'sub': email, 'id': user_id, 'role': role }
+        if expires_delta:
+            expire = datetime.utcnow() + expires_delta
+        else:
+            expire = datetime.utcnow() + timedelta(minutes=15)
+        encode.update({'exp': expire})
+        return jwt.encode(encode, self.SECRET_KEY, algorithm=self.ALGORITHM)
+
+
+    """ Get user by token """
+
+
+    @staticmethod
+    async def get_current_user(request: Request) -> None | dict:
+        try:
+            token = request.cookies.get('access_token')
+            if token is None:
+                return None
+            payload = jwt.decode(token=token, key=AuthRouter.SECRET_KEY, algorithms=[AuthRouter.ALGORITHM])
+            email: str = payload.get('sub')
+            user_id: str = payload.get('id')
+            if email is None or user_id is None:
+                AuthRouter.logout(request)
+                return None
+            return {'email': email, 'id': user_id}
+        except JWTError:
+            return None
+
+    def init_get_function(self):
+
+
+        """ View login form """
+            
+            
+        @self.router.get('/login', response_class=HTMLResponse)
+        async def view_login(request: Request):
+            if await self.get_current_user(request):
+                return RedirectResponse(request.url_for('index'), status_code=status.HTTP_302_FOUND)
+            return self.templates.TemplateResponse('auth/login.html', {'request': request,
+                                                                'title': 'Вхід'})
+            
+
+        """ View register form """
+
+
+        @self.router.get('/register', response_class=HTMLResponse)
+        async def view_register(request: Request):
+            if await self.get_current_user(request):
+                return RedirectResponse(request.url_for('index'), status_code=status.HTTP_302_FOUND)
+            return self.templates.TemplateResponse('auth/register.html', {'request': request,
+                                                                    'title': 'Реєстрація'})
+            
+            
+        """ Logout user """
+
+
+        @self.router.get('/logout')
+        async def logout(request: Request):
+            response = self.templates.TemplateResponse('home.html', {'request': request})
+            response.delete_cookie(key='access_token')
+            return response
+    
+    def init_post_function(self):
+
+        """ Login and create user token """
+
+
+        @self.router.post('/login', response_class=HTMLResponse)
+        async def login(request: Request, db: Session = Depends(database.get_session)):
+            try:
+                form = LoginForm(request)
+                await form.create_oauth_form()
+                response = RedirectResponse(request.url_for('index'), status_code=status.HTTP_302_FOUND)
+
+                validate_user_cookie = await self.login_for_access_token(response=response, form_data=form, db=db)
+
+                if not validate_user_cookie:
+                    msg = "Не вірні данні користувача"
+                    return self.templates.TemplateResponse('auth/login.html', {'request': request,
+                                                                        'title': 'Вхід',
+                                                                        'msg': msg})
+                return response
+            except HTTPException:
+                msg = "Невідома ошибка"
+                return self.templates.TemplateResponse('auth/login.html', {'request': request,
+                                                                    'title': 'Вхід',
+                                                                    'msg': msg})
+
+
+        """ Register user and add to database """
+
+
+        @self.router.post('/register', response_class=HTMLResponse)
+        async def register(request: Request, email: str = Form(), password: str = Form(),
+                        password2: str = Form(), firstname: str = Form(),
+                        lastname: str = Form(), img: str = Form(),
+                        surname: Optional[str] = Form(None),
+                        db: Session = Depends(database.get_session)):
+            validation1 = db.query(models.User).filter(models.User.email == email).first()
+
+            if validation1 is not None:
+                msg = "Така пошта вже існує"
+                return self.templates.TemplateResponse('auth/register.html', {'request': request,
+                                                                        'title': 'Реєстрація',
+                                                                        'msg': msg})
+
+            if password != password2:
+                msg = "Паролі не співпадають"
+                return self.templates.TemplateResponse('auth/register.html', {'request': request,
+                                                                        'title': 'Реєстрація',
+                                                                        'msg': msg})
+
+            user_id = uuid.uuid4()
+
+            file_path = f'static/users/images/{user_id}.png'
+
+            utils.save_image_base64(img.split(',')[1], file_path)
+
+            if utils.get_face_count(file_path) <= 0:
+                msg = "На фото невидно лиця"
+                os.remove(file_path)
+                return self.templates.TemplateResponse('auth/register.html', {'request': request,
+                                                                        'title': 'Реєстрація',
+                                                                        'msg': msg})
+
+            user = models.User(user_id=user_id, email=email, password=self.get_password_hash(password),
+                            first_name=firstname, last_name=lastname, surname=surname,
+                            path_to_image=file_path, is_active=True, role=1)
+            db.add(user)
+            return RedirectResponse(request.url_for('view_login'), status_code=status.HTTP_302_FOUND)
+
+
+    """ Aunhenticate user and add token to cookie """
+
+
+    async def login_for_access_token(self, response: Response, form_data: OAuth2PasswordRequestForm = Depends(),
+                                    db: Session = Depends(database.get_session)) -> bool:
+        user = self.authenticate_user(form_data.username, form_data.password, db)
+        if not user:
+            return False
+        role = db.query(models.Role).filter(models.Role.id == user.role_id).first().name
+        token = self.create_access_token(email=user.email,
+                                    user_id=user.user_id,
+                                    role=role,
+                                    expires_delta=timedelta(minutes=120))
+
+        response.set_cookie(key='access_token', value=token, httponly=True)
+
+        return True
     
 
-def create_access_token(email: str, user_id: str,
-                        expires_delta: Optional[timedelta] = None) -> str:
-    encode = {'sub': email, 'id': user_id}
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
-    encode.update({'exp': expire})
-    return jwt.encode(encode, SECRET_KEY, algorithm=ALGORITHM)
-
-async def get_current_user(token: str = Depends(oauth2_bearer)):
-    try:
-        payload = jwt.decode(token=token, key=SECRET_KEY, algorithms=[ALGORITHM])
-        email: str = payload.get('sub')
-        user_id: str = payload.get('id')
-        if email is None or user_id is None:
-            raise get_user_exeption()
-        return {'email': email, 'id': user_id}
-    except JWTError:
-        raise get_user_exeption()
-# endregion
-
-# region Router
-
-@router.post('/register')
-async def register_user(register_user: User, sesssion: Session = Depends(get_session)) -> User:
-    user = models.User(register_user.email,  get_password_hash(register_user.hashed_password),
-                       register_user.first_name, register_user.last_name,
-                       register_user.surname, register_user.path_to_image, register_user.is_active)
-    sesssion.add(user)
-    return register_user
-
-
-@router.post('/token')
-async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(),
-                                 db: Session = Depends(get_session)):
-    user = authenticate_user(form_data.username, form_data.password, db)
-    if not user:
-        raise token_exeption()
-    token = create_access_token(email=user.email,
-                                user_id=user.user_id,
-                                expires_delta=timedelta(minutes=20))
-    return {'token': token}
-
-# endregion
-
-# region Exeptions
-
-get_user_exeption = lambda: HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-                                          detail="Could not validate credentials",
-                                          headers={'WWW-Authenticate': 'Bearer'})
-
-token_exeption = lambda: HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-                                       detail="Incorrect email or password",
-                                       headers={'WWW-Authenticate': 'Bearer'})
-
-# endregion
+auth = AuthRouter()
+router = auth.get_router()
