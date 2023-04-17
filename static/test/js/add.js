@@ -12,12 +12,12 @@ addQuestionBtn.addEventListener('click', (event) => {
   newQuestion.id = questionCounter;
   newQuestion.innerHTML = `
   <div class="mb-3">
-    <span class="form-label" for="question-${questionCounter}">Запитання ${questionCounter}:</span>
+    <span class="form-label" for="question-${questionCounter}">Питання ${questionCounter}:</span>
     <input type="text" class="form-control" id="question-${questionCounter}" name="question_${questionCounter}">
   </div>
   <div class="mb-3">
     <button class="add-answer-btn btn btn-primary ms-2"">Додати відповідь</button>
-    <button type="button" class="delete-question-btn btn btn-danger ms-2">Видалити запитання</button>
+    <button type="button" class="delete-question-btn btn btn-danger ms-2">Видалити питання</button>
   </div>
   <div class="answers-container">
     <!-- Контейнер для відповідей -->
@@ -41,7 +41,7 @@ addQuestionBtn.addEventListener('click', (event) => {
       <input type="text" class="form-control" id="answer-${questionId}-${answerCounter}" name="answer_${questionId}_${answerCounter}">
       <div class="mb-3 form-check">
         <label for="is-correct-${questionId}-${answerCounter}" class="form-check-label">Правильна відповідь?</label>
-        <input type="checkbox" id="correct-answer" class="form-check-input" id="is-correct-${questionId}-${answerCounter}" name="is_correct_${questionId}_${answerCounter}">
+        <input type="checkbox" class="form-check-input" id="is-correct-${questionId}-${answerCounter}" name="is_correct_${questionId}_${answerCounter}">
       </div>
     `;
   

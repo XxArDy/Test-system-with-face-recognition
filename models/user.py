@@ -30,7 +30,7 @@ class User(database.get_base()):
         self.surname = surname
         self.path_to_image = path_to_image
         self.is_active = is_active
-        self.role = role
+        self.role_id = role
     
     def get_user_full_name(self) -> str:    
         return f'{self.last_name} {self.first_name} {self.surname}'

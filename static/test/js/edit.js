@@ -12,12 +12,12 @@ addQuestionBtn.addEventListener('click', (event) => {
   newQuestion.id = questionCounter;
   newQuestion.innerHTML = `
   <div class="mb-3">
-    <span class="form-label" for="question-${questionCounter}">Запитання ${questionCounter}:</span>
+    <span class="form-label" for="question-${questionCounter}">Питання ${questionCounter}:</span>
     <input type="text" class="form-control" id="question-${questionCounter}" name="question_${questionCounter}">
   </div>
   <div class="mb-3">
     <button class="add-answer-btn btn btn-primary ms-2"">Додати відповідь</button>
-    <button type="button" class="delete-question-btn btn btn-danger ms-2">Видалити запитання</button>
+    <button type="button" class="delete-question-btn btn btn-danger ms-2">Видалити питання</button>
   </div>
   <div class="answers-container">
     <!-- Контейнер для відповідей -->
@@ -41,7 +41,7 @@ addQuestionBtn.addEventListener('click', (event) => {
       <input type="text" class="form-control" id="answer-${questionId}-${answerCounter}" name="answer_${questionId}_${answerCounter}">
       <div class="mb-3 form-check">
         <label for="is-correct-${questionId}-${answerCounter}" class="form-check-label">Правильна відповідь?</label>
-        <input type="checkbox" id="correct-answer" class="form-check-input" id="is-correct-${questionId}-${answerCounter}" name="is_correct_${questionId}_${answerCounter}">
+        <input type="checkbox" class="form-check-input" id="is-correct-${questionId}-${answerCounter}" name="is_correct_${questionId}_${answerCounter}">
       </div>
     `;
   
@@ -63,3 +63,95 @@ addQuestionBtn.addEventListener('click', (event) => {
   });
 });
 
+const questions = JSON.parse(document.getElementById('questions-data').value);
+
+function createQuestions(){
+  for (; questionCounter < questions.length; questionCounter++) {
+    const newQuestion = document.createElement('div');
+    newQuestion.classList.add('mb-3', 'border', 'border-secondary', 'p-3');
+    newQuestion.id = questionCounter;
+    newQuestion.innerHTML = `
+    <div class="mb-3">
+      <span class="form-label" for="question-${questionCounter}">Питання ${questionCounter}:</span>
+      <input type="text" class="form-control" id="question-${questionCounter}" name="question_${questionCounter}" value=${questions[questionCounter].text}>
+    </div>
+    <div class="mb-3">
+      <button class="add-answer-btn btn btn-primary ms-2"">Додати відповідь</button>
+      <button type="button" class="delete-question-btn btn btn-danger ms-2">Видалити питання</button>
+    </div>
+    <div class="answers-container">
+      <!-- Контейнер для відповідей -->
+    </div>
+    `;
+    questionsContainer.appendChild(newQuestion);
+  
+    let answerCounter = 0;
+    const addAnswerBtn = newQuestion.querySelector('.add-answer-btn');
+    const deleteQuestionBtn = newQuestion.querySelector('.delete-question-btn');
+    let answers = questions[questionCounter].answers;
+
+    for (; answerCounter < answers.length; answerCounter++) {
+      const questionId = newQuestion.id;
+    
+      const newAnswer = document.createElement('div');
+      newAnswer.classList.add('mb-3', 'border', 'border-secondary', 'p-3');
+      newAnswer.innerHTML = `
+        <span for="answer-${questionId}-${answerCounter}" class="form-label">Відповідь ${answerCounter}:</span>
+        <input type="text" class="form-control" id="answer-${questionId}-${answerCounter}" name="answer_${questionId}_${answerCounter}" value=${answers[answerCounter].text}>
+        <div class="mb-3 form-check">
+          <label for="is-correct-${questionId}-${answerCounter}" class="form-check-label">Правильна відповідь?</label>
+          <input type="checkbox" class="form-check-input" id="is-correct-${questionId}-${answerCounter}" name="is_correct_${questionId}_${answerCounter}"
+          ${answers[answerCounter].is_correct ? 'checked' : ''}>
+        </div>
+      `;
+    
+      const removeAnswerButton = document.createElement("button");
+      removeAnswerButton.type = "button";
+      removeAnswerButton.innerText = "Видалити";
+      removeAnswerButton.classList.add("btn", "btn-danger", "ms-2");
+      removeAnswerButton.addEventListener("click", () => {
+        newAnswer.remove();
+      });
+    
+      newAnswer.appendChild(removeAnswerButton);
+      const answersContainer = newQuestion.querySelector('.answers-container'); 
+      answersContainer.appendChild(newAnswer);
+    
+    }
+  
+    addAnswerBtn.addEventListener('click', (event) => {
+      event.preventDefault();
+      answerCounter++;
+      const questionId = newQuestion.id;
+    
+      const newAnswer = document.createElement('div');
+      newAnswer.classList.add('mb-3', 'border', 'border-secondary', 'p-3');
+      newAnswer.innerHTML = `
+        <span for="answer-${questionId}-${answerCounter}" class="form-label">Відповідь ${answerCounter}:</span>
+        <input type="text" class="form-control" id="answer-${questionId}-${answerCounter}" name="answer_${questionId}_${answerCounter}">
+        <div class="mb-3 form-check">
+          <label for="is-correct-${questionId}-${answerCounter}" class="form-check-label">Правильна відповідь?</label>
+          <input type="checkbox" class="form-check-input" id="is-correct-${questionId}-${answerCounter}" name="is_correct_${questionId}_${answerCounter}">
+        </div>
+      `;
+    
+      const removeAnswerButton = document.createElement("button");
+      removeAnswerButton.type = "button";
+      removeAnswerButton.innerText = "Видалити";
+      removeAnswerButton.classList.add("btn", "btn-danger", "ms-2");
+      removeAnswerButton.addEventListener("click", () => {
+        newAnswer.remove();
+      });
+    
+      newAnswer.appendChild(removeAnswerButton);
+      const answersContainer = newQuestion.querySelector('.answers-container'); 
+      answersContainer.appendChild(newAnswer);
+    });
+  
+    deleteQuestionBtn.addEventListener("click", () => {
+      newQuestion.remove();
+    });
+  }
+}
+
+window.addEventListener('load', createQuestions);

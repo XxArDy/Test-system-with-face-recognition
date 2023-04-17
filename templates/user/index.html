@@ -1,0 +1,101 @@
+{% extends "layout/_navbar.html" %}
+
+{% block css %}
+    <link rel="stylesheet" href="{{ url_for('static', path='/users/css/style.css') }}">
+{% endblock %}
+
+{% block content %}
+<main>
+    <div id="mainDiv">
+    <div class="container">
+        <form method="post" id="formPassword" action="{{ request.url_for('change_password') }}">
+            <div class="form-control mt-5">
+                <div class="mb-3">
+                    <h2>Змінна паролю</h2>
+                </div>
+
+                <div class="mb-3">
+                    <span for="curent_password" class="form-label">Теперішній пароль:</span>
+                    <input type="password" id="curent_password" name="curent_password" class="form-control">
+                </div>
+
+                <div class="mb-3">
+                    <span for="new_password" class="form-label">Новий пароль:</span>
+                    <input type="password" id="new_password" name="new_password" class="form-control">
+                </div>
+
+                <div class="mb-3">
+                    <span for="new_password" class="form-label">Повтор нового паролю:</span>
+                    <input type="password" id="new_password_again" name="new_password_again" class="form-control">
+                </div>
+
+                <button type="submit" class="btn btn-success">Змінити</button>
+            </div>
+        </form>
+
+        <form method="post" id="formImage" action="{{ request.url_for('change_image') }}" class="mb-5">
+            <div class="form-control mt-5">
+                <div class="mb-3">
+                    <h2>Змінна фото</h2>
+                </div>
+                <img src="{{ url_for('static', path='/users/images/' + user.user_id + '.png') }}" alt="Твоє фото" class="user-photo">
+                <div class="form-group">
+                    {% include 'photo_model.html' %}
+                    <button type="button" class="btn btn-primary mt-2" id="photoButton">Зробити фото</button>
+                    <input class="hidden" type="hidden" name="img" id="photoInput">
+                  </div>
+                  <button type="submit" class="btn btn-success mt-2" id="photoButton">Змінити фото</button>
+            </div>
+        </form>
+
+        <div class="card mb-5">
+            <div class="card-header row">
+                <h5 class="card-title col">Список пройдених тестів</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Назва тесту</th>
+                            <th>Кількість процентів правильних відповідей</th>
+                            <th>Кількість балів</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                            {% if tests %}
+                                {% for item in tests %}
+                                <tr>
+                                    {% for i in all_test %}
+                                        {% if i.id == item.test_id %}
+                                            <td class="col-2">{{ i.name }}</td>
+                                            
+                                        {% endif %}
+                                    {% endfor %}
+                                    <td class="col-2">{{ item.score }}%</td>
+                                    {% if item.score >= 90 %}
+                                        <td class="col-1">5 балів</td>
+                                    {% elif item.score >= 80  %}
+                                        <td class="col-1">4 бали</td>
+                                    {% elif item.score >= 60  %}
+                                        <td class="col-1">3 бали</td>
+                                    {% else %}
+                                        <td class="col-1">2 бали</td>
+                                    {% endif %}
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                            <tr>
+                                <td>Ви ще не проходили тести</td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                            {% endif %}
+                    </tbody>
+                </table>
+            </div>
+    </div>
+</div>
+</main>
+<script src="{{ url_for('static', path='/users/js/script.js') }}"></script>
+<script src="{{ url_for('static', path='/photo.js') }}"></script>
+{% endblock %}

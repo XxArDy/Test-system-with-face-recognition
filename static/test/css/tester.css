@@ -1,0 +1,18 @@
+#timer {
+    position: fixed; 
+    bottom: 0; 
+    right: 0;
+    background-color: rgb(61, 61, 61);
+    color: white;
+    font-size: larger;
+    text-align: center;
+    padding: 15px;
+}
+
+label {
+    user-select: none;
+}
+
+span {
+    user-select: none;
+}

@@ -11,7 +11,7 @@ class Database:
             password = os.getenv("DB_PASSWORD", "xxardy")
             host = os.getenv("DB_HOST", "localhost")
             port = os.getenv("DB_PORT", 5432)
-            database = os.getenv("DB_NAME", "HPKTest")
+            database = os.getenv("DB_NAME", "hpktest")
             self.DATABASE_URL = f"postgresql://{user}:{password}@{host}:{port}/{database}"
 
         self.engine = create_engine(
