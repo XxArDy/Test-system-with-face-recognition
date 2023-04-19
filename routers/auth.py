@@ -1,5 +1,6 @@
 import os
 import uuid
+import re
 from datetime import datetime, timedelta
 from typing import Optional, Type
 
@@ -165,8 +166,20 @@ class AuthRouter(BaseRouter):
                                                                               'title': 'Реєстрація',
                                                                               'msg': msg})
 
-            if compare_digest(password, password2):
+            if not re.match(r'^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{6,}$', password):
+                msg = "Пароль відповідає всім вимогам"
+                return self.templates.TemplateResponse('auth/register.html', {'request': request,
+                                                                              'title': 'Реєстрація',
+                                                                              'msg': msg})
+
+            if not compare_digest(password, password2):
                 msg = "Паролі не співпадають"
+                return self.templates.TemplateResponse('auth/register.html', {'request': request,
+                                                                              'title': 'Реєстрація',
+                                                                              'msg': msg})
+
+            if img == "null":
+                msg = "Будь ласка зробіть фото"
                 return self.templates.TemplateResponse('auth/register.html', {'request': request,
                                                                               'title': 'Реєстрація',
                                                                               'msg': msg})

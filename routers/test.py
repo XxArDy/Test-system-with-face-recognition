@@ -132,6 +132,12 @@ class TestRouter(BaseRouter):
                                db: Session = Depends(database.get_session)):
             user = await AuthRouter.get_current_user(request)
 
+            if img == "null":
+                msg = "Будь ласка зробіть фото"
+                return self.templates.TemplateResponse('test/check_user_face.html', {'request': request,
+                                                                                     'title': 'Перевірка користувача',
+                                                                                     'msg': msg})
+
             file_path_temp = f'static/users/check_images/{user["id"]}.png'
             file_path_user = f'static/users/images/{user["id"]}.png'
             utils.save_image_base64(img.split(',')[1], file_path_temp)
@@ -180,7 +186,7 @@ class TestRouter(BaseRouter):
             db.add(CompletedTest(form.get('user_id', ''), test_id, score))
             db.commit()
 
-            comp_id = db.query(CompletedTest).filter(CompletedTest.user_id is user['id'],
+            comp_id = db.query(CompletedTest).filter(CompletedTest.user_id == user['id'],
                                                      CompletedTest.test_id == test_id,
                                                      CompletedTest.score == score).first().id
 
