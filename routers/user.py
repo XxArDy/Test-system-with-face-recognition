@@ -28,22 +28,22 @@ class UserRouter(BaseRouter):
 
             user_dict = db.query(User).filter(User.email == user_dict["email"]).first()
             test = db.query(Test).all()
-            compleated_test = db.query(CompletedTest).filter(CompletedTest.user_id == user_dict.user_id).all()
+            completed_test = db.query(CompletedTest).filter(CompletedTest.user_id == user_dict.user_id).all()
 
             return self.templates.TemplateResponse('user/index.html',
-                                                   {'request': request, 'tests': compleated_test, "all_test": test,
+                                                   {'request': request, 'tests': completed_test, "all_test": test,
                                                     'user': user_dict, 'title': 'Твій профіль',
                                                     'user_photo': user_dict.path_to_image.replace('static', '')})
 
     def init_post_function(self):
         @self.router.post('/change/password')
-        async def change_password(request: Request, curent_password: str = Form(),
+        async def change_password(request: Request, current_password: str = Form(),
                                   new_password: str = Form(), db: Session = Depends(database.get_session)):
             user_dict = await AuthRouter.get_current_user(request)
             if user_dict is None:
                 return RedirectResponse(request.url_for('index'), status_code=status.HTTP_302_FOUND)
             user_dict = db.query(User).filter(User.email == user_dict["email"]).first()
-            if not AuthRouter.verify_password(curent_password, user_dict.hashed_password):
+            if not AuthRouter.verify_password(current_password, user_dict.hashed_password):
                 return {"result": False}
 
             user_dict.hashed_password = AuthRouter.get_password_hash(new_password)

@@ -13,8 +13,8 @@ class Test(database.get_base()):
     is_random = Column(Boolean, nullable=False)
     topic_id = Column(Integer, ForeignKey('topics.id'), nullable=False)
     topic = relationship("Topic", backref="tests")
-    
-    def __init__(self, name: str, description: str, time_to_complete: int, 
+
+    def __init__(self, name: str, description: str, time_to_complete: int,
                  is_random: bool, topic_id: int) -> None:
         self.name = name
         self.description = description

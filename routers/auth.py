@@ -5,7 +5,7 @@ from typing import Optional, Type
 
 from fastapi import Depends, HTTPException, Request, Form, Response
 from fastapi.responses import HTMLResponse
-from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
+from fastapi.security import OAuth2PasswordRequestForm
 from jose import jwt, JWTError
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
@@ -37,7 +37,6 @@ class AuthRouter(BaseRouter):
     bcrypt_context = CryptContext(schemes=["bcrypt"], deprecated='auto')
     SECRET_KEY = "14pPK2rdJWVKfaqQvRn1DZu508KunWImLzP04Bxy5A7a9EEnnFo1ItGZlDJI"
     ALGORITHM = "HS256"
-    oauth2_bearer = OAuth2PasswordBearer(tokenUrl='token')
 
     def __init__(self):
         super().__init__()
@@ -117,9 +116,7 @@ class AuthRouter(BaseRouter):
 
         @self.router.get('/logout')
         async def logout(request: Request):
-            response = self.templates.TemplateResponse('home.html', {'request': request})
-            response.delete_cookie(key='access_token')
-            return response
+            return AuthRouter.logout(request)
 
     @staticmethod
     def logout(request: Request):

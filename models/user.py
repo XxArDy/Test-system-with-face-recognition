@@ -21,7 +21,8 @@ class User(database.get_base()):
     role = relationship('Role', back_populates='users')
     
     def __init__(self, user_id: Optional[str], email: str, password: str, first_name: str,
-                 last_name: str, surname: Optional[str], path_to_image: str, is_active: Optional[bool], role: Optional[int]) -> None:
+                 last_name: str, surname: Optional[str], path_to_image: str, is_active: Optional[bool],
+                 role: Optional[int]) -> None:
         self.user_id = user_id
         self.email = email
         self.hashed_password = password

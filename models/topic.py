@@ -11,7 +11,7 @@ class Topic(database.get_base()):
     subject_id = Column(Integer, ForeignKey('subjects.id'), nullable=False)
     subject = relationship("Subject", backref="topics")
     
-    def __init__(self,subject_id: int, name: str) -> None:
+    def __init__(self, subject_id: int, name: str) -> None:
         self.name = name
         self.subject_id = subject_id
     

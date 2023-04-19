@@ -27,7 +27,8 @@ class TestRouter(BaseRouter):
             user = await AuthRouter.get_current_user(request)
             score = utils.get_score(comp.score)
             return self.templates.TemplateResponse('test/compleat_test.html',
-                                                   {'request': request, 'score': score, 'user': user})
+                                                   {'request': request, 'score': score, 'user': user,
+                                                    'title': 'Результат тесту'})
 
         @self.router.get('/tester/{test_id}', response_class=HTMLResponse)
         async def view_tester(request: Request, test_id: int, db: Session = Depends(database.get_session)):
@@ -89,11 +90,11 @@ class TestRouter(BaseRouter):
             test_object = db.query(Test).filter(Test.id == test_id).first()
             user = await AuthRouter.get_current_user(request)
             if test_object:
-                qestions = await self.get_question(db, test_object.id)
+                questions = await self.get_question(db, test_object.id)
                 return self.templates.TemplateResponse('test/edit_test.html', {'request': request,
-                                                                               'title': 'Тест тему',
+                                                                               'title': 'Змінити тест',
                                                                                'test': test_object,
-                                                                               'questions': qestions,
+                                                                               'questions': questions,
                                                                                'user': user})
             return RedirectResponse(request.url_for('view_test', topic_id=topic_id), status_code=status.HTTP_302_FOUND)
 
@@ -138,13 +139,13 @@ class TestRouter(BaseRouter):
             if utils.check_face(file_path_user, file_path_temp):
                 test_object = db.query(Test).filter(Test.id == test_id).first()
                 token = utils.gen_test_token(test_object.id, timedelta(minutes=test_object.time_to_complete))
-                responce = RedirectResponse(request.url_for('view_tester', test_id=test_object.id),
+                response = RedirectResponse(request.url_for('view_tester', test_id=test_object.id),
                                             status_code=status.HTTP_302_FOUND)
-                responce.set_cookie('test_token', token)
-                return responce
+                response.set_cookie('test_token', token)
+                return response
 
             return self.templates.TemplateResponse('test/check_user_face.html', {'request': request,
-                                                                                 'title': 'Проверка користувача',
+                                                                                 'title': 'Перевірка користувача',
                                                                                  'msg': "Користувача не підтверджено! "
                                                                                         "Попробуйте зробити фото знову "
                                                                                         "або оновити його у профілі."})
@@ -183,10 +184,10 @@ class TestRouter(BaseRouter):
                                                      CompletedTest.test_id == test_id,
                                                      CompletedTest.score == score).first().id
 
-            responce = RedirectResponse(request.url_for('view_compleat', compleat_id=comp_id),
+            response = RedirectResponse(request.url_for('view_compleat', compleat_id=comp_id),
                                         status_code=status.HTTP_302_FOUND)
-            responce.delete_cookie('test_token')
-            return responce
+            response.delete_cookie('test_token')
+            return response
 
     # Функція для розбору даних форми та запису їх в базу даних
 
@@ -215,9 +216,9 @@ class TestRouter(BaseRouter):
 
                 # Отримуємо всі відповіді для цього питання
                 answers = []
-                for subkey, subvalue in form_data.items():
+                for subkey, sub_value in form_data.items():
                     if subkey.startswith(f'answer_{key.split("_")[1]}_'):
-                        answers.append((subkey, subvalue))
+                        answers.append((subkey, sub_value))
 
                 # Створюємо відповіді
                 for answer_key, answer_text in answers:
