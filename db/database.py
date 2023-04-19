@@ -3,6 +3,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.ext.declarative import declarative_base
 
+
 class Database:
     def __init__(self):
         self.DATABASE_URL = os.getenv("DATABASE_URL")
@@ -11,8 +12,8 @@ class Database:
             password = os.getenv("DB_PASSWORD", "xxardy")
             host = os.getenv("DB_HOST", "localhost")
             port = os.getenv("DB_PORT", 5432)
-            database = os.getenv("DB_NAME", "hpktest")
-            self.DATABASE_URL = f"postgresql://{user}:{password}@{host}:{port}/{database}"
+            database_name = os.getenv("DB_NAME", "hpktest")
+            self.DATABASE_URL = f"postgresql://{user}:{password}@{host}:{port}/{database_name}"
 
         self.engine = create_engine(
             self.DATABASE_URL
@@ -25,7 +26,7 @@ class Database:
         self.Base = declarative_base()
     
     def get_base(self):
-        return self.Base;
+        return self.Base
     
     def init_db(self):
         self.Base.metadata.create_all(self.engine)

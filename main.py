@@ -25,13 +25,13 @@ class MyApp:
     def include_request(self):
         @self.app.get('/', response_class=HTMLResponse)
         async def index(request: Request):
-            user = await AuthRouter.get_current_user(request)
+            user_dict = await AuthRouter.get_current_user(request)
             return self.templates.TemplateResponse('home.html', {'request': request,
-                                                                'title': 'Home',
-                                                                'user': user})
+                                                                 'title': 'Home',
+                                                                 'user': user_dict})
 
     def start(self):
-        return self.app;
+        return self.app
 
 
 myApp = MyApp()

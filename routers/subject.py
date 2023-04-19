@@ -22,30 +22,27 @@ class SubjectRouter(BaseRouter):
             subjects = db.query(Subject).all()
             user = await AuthRouter.get_current_user(request)
             return self.templates.TemplateResponse('subject/index.html', {'request': request,
-                                                                    'title': 'Предмети',
-                                                                    'subjects': subjects,
-                                                                    'user': user})
-            
+                                                                          'title': 'Предмети',
+                                                                          'subjects': subjects,
+                                                                          'user': user})
 
         @self.router.get('/add', response_class=HTMLResponse)
         async def view_subject_add(request: Request):
             user = await AuthRouter.get_current_user(request)
             return self.templates.TemplateResponse('subject/add_subject.html', {'request': request,
-                                                                        'title': 'Додати предмет',
-                                                                        'user': user})
-            
-            
+                                                                                'title': 'Додати предмет',
+                                                                                'user': user})
+
         @self.router.get('/edit/{subject_id}', response_class=HTMLResponse)
         async def view_subject_edit(request: Request, subject_id: int, db: Session = Depends(database.get_session)):
-            subject = db.query(Subject).filter(Subject.id == subject_id).first()
+            subject_object = db.query(Subject).filter(Subject.id == subject_id).first()
             user = await AuthRouter.get_current_user(request)
-            if subject:
+            if subject_object:
                 return self.templates.TemplateResponse('subject/edit_subject.html', {'request': request,
-                                                                        'title': 'Змінити предмет',
-                                                                        'subject': subject,
-                                                                        'user': user})
+                                                                                     'title': 'Змінити предмет',
+                                                                                     'subject': subject_object,
+                                                                                     'user': user})
             return RedirectResponse(request.url_for('view_subject'), status_code=status.HTTP_302_FOUND)
-
 
         @self.router.get('/delete/{subject_id}', response_class=HTMLResponse)
         async def delete_subject(request: Request, subject_id: int, db: Session = Depends(database.get_session)):
@@ -55,16 +52,17 @@ class SubjectRouter(BaseRouter):
     def init_post_function(self):
         @self.router.post('/add', response_class=HTMLResponse)
         async def add_subject(request: Request, name: str = Form(), db: Session = Depends(database.get_session)):
-            subject = Subject(name)
-            db.add(subject)
+            subject_object = Subject(name)
+            db.add(subject_object)
             return RedirectResponse(request.url_for('view_subject'), status_code=status.HTTP_302_FOUND)
-
 
         @self.router.post('/edit/{subject_id}', response_class=HTMLResponse)
-        async def edit_subject(request: Request, subject_id: int, name: str = Form(), db: Session = Depends(database.get_session)):
-            subject = db.query(Subject).filter(Subject.id == subject_id).first()
-            subject.name = name
+        async def edit_subject(request: Request, subject_id: int, name: str = Form(),
+                               db: Session = Depends(database.get_session)):
+            subject_object = db.query(Subject).filter(Subject.id == subject_id).first()
+            subject_object.name = name
             return RedirectResponse(request.url_for('view_subject'), status_code=status.HTTP_302_FOUND)
+
 
 subject = SubjectRouter()
 

@@ -3,10 +3,13 @@ from fastapi.templating import Jinja2Templates
 import abc
 
 
+""" Base class for all routers"""
+
+
 class BaseRouter(abc.ABC):
-    
+    templates = Jinja2Templates(directory='templates')
+
     def __init__(self):
-        self.templates = Jinja2Templates(directory='templates')
         self.router = APIRouter()
         self.init_get_function()
         self.init_post_function()

@@ -16,99 +16,96 @@ import random
 
 
 class TestRouter(BaseRouter):
-    
+
     def __init__(self):
         super().__init__()
-    
+
     def init_get_function(self):
         @self.router.get('/compleat/{compleat_id}', response_class=HTMLResponse)
         async def view_compleat(request: Request, compleat_id: int, db: Session = Depends(database.get_session)):
             comp = db.query(CompletedTest).filter(CompletedTest.id == compleat_id).first()
             user = await AuthRouter.get_current_user(request)
             score = utils.get_score(comp.score)
-            return self.templates.TemplateResponse('test/compleat_test.html', {'request': request, 'score': score, 'user': user})
-            
+            return self.templates.TemplateResponse('test/compleat_test.html',
+                                                   {'request': request, 'score': score, 'user': user})
 
         @self.router.get('/tester/{test_id}', response_class=HTMLResponse)
         async def view_tester(request: Request, test_id: int, db: Session = Depends(database.get_session)):
             if not utils.check_test_token(request, test_id):
                 return RedirectResponse(request.url_for('index'), status_code=status.HTTP_302_FOUND)
             user = await AuthRouter.get_current_user(request)
-            test = db.query(Test).filter(Test.id == test_id).first()
-            
+            test_object = db.query(Test).filter(Test.id == test_id).first()
+
             answers = []
-            
+
             questions = db.query(Question).filter(Question.test_id == test_id).all()
-            
+
             for i in questions:
                 temp = db.query(Answer).filter(Answer.question_id == i.id).all()
                 answers.extend(temp)
-            
-            
-            if test.is_random:
+
+            if test_object.is_random:
                 random.shuffle(questions)
                 random.shuffle(answers)
             return self.templates.TemplateResponse('test/pass_the_test.html', {'request': request,
-                                                                            'title': 'Проходження тесту',
-                                                                            'questions': questions,
-                                                                            'answers': answers, 
-                                                                            'timer': test.time_to_complete,
-                                                                            'user': user})
-
+                                                                               'title': 'Проходження тесту',
+                                                                               'questions': questions,
+                                                                               'answers': answers,
+                                                                               'timer': test_object.time_to_complete,
+                                                                               'user': user})
 
         @self.router.get('/check/{test_id}', response_class=HTMLResponse)
         async def view_check_person(request: Request, test_id: int, db: Session = Depends(database.get_session)):
             user = await AuthRouter.get_current_user(request)
-            test = db.query(Test).filter(Test.id == test_id).first()
+            test_object = db.query(Test).filter(Test.id == test_id).first()
             if user is None:
-                return RedirectResponse(request.url_for('view_test', topic_id=test.topic_id), status_code=status.HTTP_302_FOUND)
+                return RedirectResponse(request.url_for('view_test', topic_id=test_object.topic_id),
+                                        status_code=status.HTTP_302_FOUND)
             return self.templates.TemplateResponse('test/check_user_face.html', {'request': request,
-                                                                            'title': 'Проверка користувача',
-                                                                            'user': user})
-
+                                                                                 'title': 'Перевірка користувача',
+                                                                                 'user': user})
 
         @self.router.get('/{topic_id}', response_class=HTMLResponse)
         async def view_test(request: Request, topic_id: int, db: Session = Depends(database.get_session)):
             tests = db.query(Test).filter(Test.topic_id == topic_id).all()
             user = await AuthRouter.get_current_user(request)
-            return self.templates.TemplateResponse('test/index.html', {'request': request,
-                                                                    'title': 'Тести',
-                                                                    'tests': tests,
-                                                                    'user': user,
-                                                                    'topic_id': topic_id})
 
+            return self.templates.TemplateResponse('test/index.html', {'request': request,
+                                                                       'title': 'Тести',
+                                                                       'tests': tests,
+                                                                       'user': user,
+                                                                       'topic_id': topic_id})
 
         @self.router.get('/{topic_id}/add', response_class=HTMLResponse)
-        async def view_test_add(request: Request, topic_id: int):
+        async def view_test_add(request: Request):
             user = await AuthRouter.get_current_user(request)
             return self.templates.TemplateResponse('test/add_test.html', {'request': request,
-                                                                    'title': 'Додати тест',
-                                                                    'user': user})
-            
-            
+                                                                          'title': 'Додати тест',
+                                                                          'user': user})
+
         @self.router.get('/{topic_id}/edit/{test_id}', response_class=HTMLResponse)
-        async def view_test_edit(request: Request, topic_id: int, test_id: int, db: Session = Depends(database.get_session)):
-            test = db.query(Test).filter(Test.id == test_id).first()
+        async def view_test_edit(request: Request, topic_id: int, test_id: int,
+                                 db: Session = Depends(database.get_session)):
+            test_object = db.query(Test).filter(Test.id == test_id).first()
             user = await AuthRouter.get_current_user(request)
-            if test:
-                qestions = await self.get_question(db, test.id)
+            if test_object:
+                qestions = await self.get_question(db, test_object.id)
                 return self.templates.TemplateResponse('test/edit_test.html', {'request': request,
-                                                                        'title': 'Тест тему',
-                                                                        'test': test,
-                                                                        'questions': qestions,
-                                                                        'user': user})
+                                                                               'title': 'Тест тему',
+                                                                               'test': test_object,
+                                                                               'questions': qestions,
+                                                                               'user': user})
             return RedirectResponse(request.url_for('view_test', topic_id=topic_id), status_code=status.HTTP_302_FOUND)
 
-
         @self.router.get('/{topic_id}/delete/{test_id}', response_class=HTMLResponse)
-        async def delete_test(request: Request, topic_id: int, test_id: int, db: Session = Depends(database.get_session)):
+        async def delete_test(request: Request, topic_id: int, test_id: int,
+                              db: Session = Depends(database.get_session)):
             questions = db.query(Question).filter(Question.test_id == test_id).all()
             for q in questions:
                 db.query(Answer).filter(Answer.question_id == q.id).delete()
             db.query(Question).filter(Question.test_id == test_id).delete()
             db.query(Test).filter(Test.id == test_id).delete()
             return RedirectResponse(request.url_for('view_test', topic_id=topic_id), status_code=status.HTTP_302_FOUND)
-
 
     def init_post_function(self):
         @self.router.post('/{topic_id}/add', response_class=HTMLResponse)
@@ -121,56 +118,58 @@ class TestRouter(BaseRouter):
             test_random = form.get('test_random')
 
             # Створюємо тест
-            test = Test(name=test_name, description=test_description, time_to_complete=test_time, is_random=bool(test_random), topic_id=topic_id)
-            db.add(test)
+            test_object = Test(name=test_name, description=test_description, time_to_complete=test_time,
+                               is_random=bool(test_random), topic_id=topic_id)
+            db.add(test_object)
             db.commit()
-            await self.process_form_data(db, form, test.id)
-            
+            await self.process_form_data(db, form, test_object.id)
+
             return RedirectResponse(request.url_for('view_test', topic_id=topic_id), status_code=status.HTTP_302_FOUND)
 
-
         @self.router.post('/check/{test_id}', response_class=HTMLResponse)
-        async def check_person(request: Request, test_id: int, img: str = Form(), db: Session = Depends(database.get_session)):
+        async def check_person(request: Request, test_id: int, img: str = Form(),
+                               db: Session = Depends(database.get_session)):
             user = await AuthRouter.get_current_user(request)
-            
+
             file_path_temp = f'static/users/check_images/{user["id"]}.png'
             file_path_user = f'static/users/images/{user["id"]}.png'
             utils.save_image_base64(img.split(',')[1], file_path_temp)
-            
+
             if utils.check_face(file_path_user, file_path_temp):
-                test = db.query(Test).filter(Test.id == test_id).first()
-                token = utils.gen_test_token(test.id, timedelta(minutes=test.time_to_complete))
-                responce = RedirectResponse(request.url_for('view_tester', test_id=test.id), status_code=status.HTTP_302_FOUND)
+                test_object = db.query(Test).filter(Test.id == test_id).first()
+                token = utils.gen_test_token(test_object.id, timedelta(minutes=test_object.time_to_complete))
+                responce = RedirectResponse(request.url_for('view_tester', test_id=test_object.id),
+                                            status_code=status.HTTP_302_FOUND)
                 responce.set_cookie('test_token', token)
                 return responce
-            
-            return self.templates.TemplateResponse('test/check_user_face.html', {'request': request,
-                                                                            'title': 'Проверка користувача',
-                                                                            'msg': "Користувача не підтверджено! Попробуйте зробити фото знову або оновити його у профілі."})
 
+            return self.templates.TemplateResponse('test/check_user_face.html', {'request': request,
+                                                                                 'title': 'Проверка користувача',
+                                                                                 'msg': "Користувача не підтверджено! "
+                                                                                        "Попробуйте зробити фото знову "
+                                                                                        "або оновити його у профілі."})
 
         @self.router.post('/{topic_id}/edit/{test_id}', response_class=HTMLResponse)
         async def edit_test(request: Request, topic_id: int, test_id: int, db: Session = Depends(database.get_session)):
-            test = db.query(Test).filter(Test.id == test_id).first()
+            test_object = db.query(Test).filter(Test.id == test_id).first()
             form = await request.form()
 
-            test.name = form.get('test_name')
-            test.description = form.get('test_description')
-            test.time_to_complete = form.get('test_time')
-            if form.get('test_random') is not None: 
-                test.is_random = form.get('test_random') 
-                
+            test_object.name = form.get('test_name')
+            test_object.description = form.get('test_description')
+            test_object.time_to_complete = form.get('test_time')
+            if form.get('test_random') is not None:
+                test_object.is_random = form.get('test_random')
+
             questions = db.query(Question).filter(Question.test_id == test_id).all()
             for q in questions:
                 db.query(Answer).filter(Answer.question_id == q.id).delete()
             db.query(Question).filter(Question.test_id == test_id).delete()
-            
-            db.commit()
-            
-            await self.process_form_data(db, form, test.id)
-            
-            return RedirectResponse(request.url_for('view_test', topic_id=topic_id), status_code=status.HTTP_302_FOUND)
 
+            db.commit()
+
+            await self.process_form_data(db, form, test_object.id)
+
+            return RedirectResponse(request.url_for('view_test', topic_id=topic_id), status_code=status.HTTP_302_FOUND)
 
         @self.router.post('/tester/{test_id}', response_class=HTMLResponse)
         async def get_tester(request: Request, test_id: int, db: Session = Depends(database.get_session)):
@@ -178,17 +177,34 @@ class TestRouter(BaseRouter):
             score = await self.calculate_score(db, test_id, form)
             user = await AuthRouter.get_current_user(request)
             db.add(CompletedTest(form.get('user_id', ''), test_id, score))
-            db.commit() 
-            comp_id = db.query(CompletedTest).filter(CompletedTest.user_id == user['id'] 
-                                                    and CompletedTest.test_id == test_id 
-                                                    and CompletedTest.score == score).first().id
-            responce = RedirectResponse(request.url_for('view_compleat', compleat_id=comp_id), status_code=status.HTTP_302_FOUND)
+            db.commit()
+
+            comp_id = db.query(CompletedTest).filter(CompletedTest.user_id is user['id'],
+                                                     CompletedTest.test_id == test_id,
+                                                     CompletedTest.score == score).first().id
+
+            responce = RedirectResponse(request.url_for('view_compleat', compleat_id=comp_id),
+                                        status_code=status.HTTP_302_FOUND)
             responce.delete_cookie('test_token')
             return responce
-            
 
     # Функція для розбору даних форми та запису їх в базу даних
-    async def process_form_data(self, db: Session, form_data: dict, test_id: int):
+
+    @staticmethod
+    async def calculate_score(db: Session, test_id: int, form: Dict[str, str]) -> float:
+        score = 0
+        questions = db.query(Question).filter(Question.test_id == test_id).all()
+        for question in questions:
+            answers = db.query(Answer).filter(Answer.question_id == question.id).all()
+            correct_answers = sum([1 for a in answers if a.is_correct])
+            correct_count = sum([1 for a in answers if form.get(f'is_correct_{question.id}_{a.id}', '')])
+            if correct_count == correct_answers:
+                score += 1
+
+        return round(score / len(questions) * 100, 2)
+
+    @staticmethod
+    async def process_form_data(db: Session, form_data: dict, test_id: int):
         # Створюємо питання та відповіді
         for key, value in form_data.items():
             if key.startswith('question_'):
@@ -211,33 +227,18 @@ class TestRouter(BaseRouter):
                     db.add(answer)
                     db.commit()
 
-
-    async def calculate_score(self, db: Session, test_id: int, form: Dict[str, str]) -> float:
-        score = 0
-        questions = db.query(Question).filter(Question.test_id == test_id).all()
-
-        for question in questions:
-            answers = db.query(Answer).filter(Answer.question_id == question.id).all()
-            correct_answers = sum([1 for a in answers if a.is_correct])
-            correct_count = sum([1 for a in answers if form.get(f'is_correct_{question.id}_{a.id}', '')])
-            if correct_count == correct_answers:
-                score += 1
-
-        return round(score / len(questions) * 100, 2)
-
-
-    async def get_question(self, db: Session, test_id: int):
+    @staticmethod
+    async def get_question(db: Session, test_id: int):
         questions = db.query(Question).filter(Question.test_id == test_id).all()
         questions_dict = []
-        index = 0
         for q in questions:
             answers = db.query(Answer).filter(Answer.question_id == q.id).all()
             answers_dict = [{"text": a.text, "is_correct": a.is_correct} for a in answers]
             q_dict = {"text": q.text, "answers": answers_dict}
             questions_dict.append(q_dict)
-            # questions_dict[index] = q_dict
-            # index += 1
+
         return questions_dict
+
 
 test = TestRouter()
 router = test.get_router()
